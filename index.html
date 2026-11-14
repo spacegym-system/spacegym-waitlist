@@ -7,8 +7,9 @@
 <title>キャンセル待ち | SPACE GYM 麻布十番店</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
-  :root { --bg:#f2f4f3; --surface:#fff; --sunk:#f6f8f7; --ink:#17201d; --muted:#5f6c67; --line:#dde3e0;
-          --accent:#0b6e63; --accent-soft:#e1f0ed; --navy:#12163f; --good:#1f7a3d; --good-soft:#e2f2e7;
+  /* スペースジムカラー:濃いネイビー(ボタン・選択中)/うすネイビー(ラベル)/そのほかは白 */
+  :root { --bg:#fff; --surface:#fff; --sunk:#fff; --ink:#151a2d; --muted:#5b6478; --line:#e1e4ec;
+          --accent:#12163f; --accent-soft:#e6e9f3; --navy:#12163f; --good:#12163f; --good-soft:#e6e9f3;
           --crit:#b3261e; --crit-soft:#fbe5e3; --warn:#a85c12; --warn-soft:#fbeedd; --chat:#8ca6d6; }
   * { box-sizing:border-box }
   [hidden] { display:none !important }   /* 隠す指定を、ほかの表示指定より優先する */
@@ -33,7 +34,7 @@
   .note { font-size:11.5px; color:var(--muted); display:block }
   .badge { display:inline-block; font-size:11px; font-weight:700; border-radius:6px; padding:1px 7px }
   .b-open { background:var(--good-soft); color:var(--good) } .b-full { background:var(--crit-soft); color:var(--crit) }
-  .b-closed { background:var(--sunk); color:var(--muted); border:1px solid var(--line) } .b-wait { background:var(--accent-soft); color:var(--accent) }
+  .b-closed { background:var(--sunk); color:var(--muted); border:1px solid var(--line) } .b-wait { background:var(--accent); color:#fff }
   .b-booked { background:var(--accent); color:#fff }
   a.btn { text-decoration:none; display:inline-block }
   .btn { border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:7px 12px; font:inherit; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; color:var(--ink) }
@@ -42,6 +43,7 @@
   .ghost { border-color:transparent; background:none; color:var(--muted) }
   .demo { border:1px dashed #6b4fbf; color:#6b4fbf; background:none; font-weight:500 }
   .danger { border-color:var(--crit); color:var(--crit) }
+  .danger-fill { background:var(--crit); border-color:var(--crit); color:#fff }
   .pad { padding:16px; display:flex; flex-direction:column; gap:12px }
   .card { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:6px }
   .field { display:flex; flex-direction:column; gap:4px; font-size:12px; font-weight:700 }
@@ -56,7 +58,7 @@
   .pos b { font-size:24px; color:var(--accent); font-family:ui-monospace,Menlo,monospace }
   .tag { display:inline-block; font-size:11.5px; font-weight:700; color:var(--accent); background:var(--accent-soft); border-radius:6px; padding:1px 8px; width:fit-content }
   .row { display:flex; flex-wrap:wrap; gap:8px }
-  .back { position:fixed; inset:0; background:rgba(10,16,14,.45); display:flex; align-items:flex-end; justify-content:center; z-index:5 }
+  .back { position:fixed; inset:0; background:rgba(18,22,63,.45); display:flex; align-items:flex-end; justify-content:center; z-index:5 }
   .sheet { background:var(--surface); width:100%; max-width:440px; border-radius:18px 18px 0 0; padding:18px 16px 22px; display:flex; flex-direction:column; gap:10px; max-height:92vh; overflow-y:auto }
   .sheet h2 { margin:0; font-size:17px }
   fieldset { border:1px solid var(--line); border-radius:10px; padding:6px 12px 10px; margin:0; display:flex; flex-direction:column; gap:4px }
@@ -297,8 +299,8 @@ function renderMine(d) {
       <b>${jaDay(x.slot.slice(0,10))} ${x.slot.slice(11)}〜</b>
       <span class="tag">${esc(x.menuLabel)}${x.staffId ? '・' + esc(tname(x.staffId)) : ''}</span>
       <div class="pos"><b>${x.position}</b> 番目 ・ ${x.waitCount}名待ち</div>
-      <div class="row"><button class="btn" data-wd="${x.id}">取り消す</button></div>
-      <div data-confirm="${x.id}" hidden class="msg err">このキャンセル待ちを取り消しますか? <button class="btn danger" data-yes="${x.id}">取り消す</button> <button class="btn ghost" data-no="${x.id}">やめる</button></div>
+      <div class="row"><button class="btn danger" data-wd="${x.id}">取り消す</button></div>
+      <div data-confirm="${x.id}" hidden class="msg err">このキャンセル待ちを取り消しますか?<div class="row" style="margin-top:8px"><button class="btn danger-fill" data-yes="${x.id}">取り消す</button><button class="btn" data-no="${x.id}">やめる</button></div></div>
     </div>`).join('');
   const b = d.booked.map(x => `<div class="card"><b>${jaDay(x.slot.slice(0,10))} ${x.slot.slice(11)}〜</b><span class="tag">${esc(x.menuLabel)}${x.staffId ? '・' + esc(tname(x.staffId)) : ''}</span><span class="badge b-booked" style="width:fit-content">キャンセル待ちから予約が確定</span></div>`).join('');
   $('main').innerHTML = `<div class="pad"><b class="small muted">登録中のキャンセル待ち</b>${w || '<div class="empty">登録中のキャンセル待ちはありません</div>'}
