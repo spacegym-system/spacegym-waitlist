@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>キャンセル待ち | SPACE GYM 麻布十番店</title>
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+  :root { --bg:#f2f4f3; --surface:#fff; --sunk:#f6f8f7; --ink:#17201d; --muted:#5f6c67; --line:#dde3e0;
+          --accent:#0b6e63; --accent-soft:#e1f0ed; --navy:#12163f; --good:#1f7a3d; --good-soft:#e2f2e7;
+          --crit:#b3261e; --crit-soft:#fbe5e3; --warn:#a85c12; --warn-soft:#fbeedd; --chat:#8ca6d6; }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.6 "Hiragino Sans","Noto Sans JP",system-ui,sans-serif; }
+  .app { max-width:440px; margin:0 auto; min-height:100vh; background:var(--surface); display:flex; flex-direction:column }
+  .test { background:var(--warn-soft); color:var(--warn); font-size:11.5px; padding:6px 14px; font-weight:700 }
+  header { padding:12px 14px; border-bottom:1px solid var(--line) }
+  header b { font-size:16px; display:block } header small { color:var(--muted); font-size:11.5px }
+  nav { display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--line) }
+  nav button { border:0; background:none; padding:10px 4px; font:inherit; font-size:13px; color:var(--muted); border-bottom:2px solid transparent; cursor:pointer; position:relative }
+  nav button[aria-selected="true"] { color:var(--accent); border-bottom-color:var(--accent); font-weight:700 }
+  .dot { background:var(--crit); color:#fff; border-radius:999px; font-size:10px; padding:0 6px; margin-left:4px }
+  main { flex:1; background:var(--sunk) }
+  .days { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px; padding:10px; background:var(--surface); border-bottom:1px solid var(--line) }
+  .day { border:1px solid var(--line); background:var(--surface); border-radius:10px; padding:4px 2px; font:inherit; font-size:11px; line-height:1.3; cursor:pointer; display:flex; flex-direction:column; align-items:center }
+  .day b { font-size:12px } .day[aria-pressed="true"] { background:var(--accent); border-color:var(--accent); color:#fff }
+  .weeknav { display:flex; justify-content:space-between; padding:6px 10px 0; background:var(--surface) }
+  .weeknav button { border:0; background:none; color:var(--accent); font:inherit; font-size:12px; cursor:pointer; padding:2px }
+  .weeknav button:disabled { color:var(--line); cursor:default }
+  .slot { display:grid; grid-template-columns:52px minmax(0,1fr) auto; gap:10px; align-items:center; padding:10px 12px; background:var(--surface); border-bottom:1px solid var(--line) }
+  .time { font-weight:700; font-size:15px; font-family:ui-monospace,Menlo,monospace }
+  .note { font-size:11.5px; color:var(--muted); display:block }
+  .badge { display:inline-block; font-size:11px; font-weight:700; border-radius:6px; padding:1px 7px }
+  .b-open { background:var(--good-soft); color:var(--good) } .b-full { background:var(--crit-soft); color:var(--crit) }
+  .b-closed { background:var(--sunk); color:var(--muted); border:1px solid var(--line) } .b-wait { background:var(--accent-soft); color:var(--accent) }
+  .b-booked { background:var(--accent); color:#fff }
+  a.btn { text-decoration:none; display:inline-block }
+  .btn { border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:7px 12px; font:inherit; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; color:var(--ink) }
+  .primary { background:var(--accent); border-color:var(--accent); color:#fff } .primary:disabled { opacity:.4; cursor:not-allowed }
+  .block { width:100%; padding:12px; font-size:14px }
+  .ghost { border-color:transparent; background:none; color:var(--muted) }
+  .demo { border:1px dashed #6b4fbf; color:#6b4fbf; background:none; font-weight:500 }
+  .danger { border-color:var(--crit); color:var(--crit) }
+  .pad { padding:16px; display:flex; flex-direction:column; gap:12px }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:6px }
+  .field { display:flex; flex-direction:column; gap:4px; font-size:12px; font-weight:700 }
+  .field input { font:inherit; font-size:16px; padding:10px 12px; border:1px solid var(--line); border-radius:8px }
+  .muted { color:var(--muted) } .small { font-size:12px }
+  .msg { padding:8px 12px; border-radius:8px; font-size:12.5px } .msg.err { background:var(--crit-soft); color:var(--crit) } .msg.ok { background:var(--good-soft); color:var(--good) }
+  .empty { padding:28px 16px; text-align:center; color:var(--muted) }
+  .loading { padding:36px 16px; display:flex; flex-direction:column; align-items:center; gap:12px; color:var(--muted); font-size:13px }
+  .spin { width:28px; height:28px; border-radius:50%; border:3px solid var(--line); border-top-color:var(--accent); animation:spin .8s linear infinite }
+  @keyframes spin { to { transform:rotate(360deg) } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation-duration:2.4s } }
+  .pos b { font-size:24px; color:var(--accent); font-family:ui-monospace,Menlo,monospace }
+  .tag { display:inline-block; font-size:11.5px; font-weight:700; color:var(--accent); background:var(--accent-soft); border-radius:6px; padding:1px 8px; width:fit-content }
+  .row { display:flex; flex-wrap:wrap; gap:8px }
+  .back { position:fixed; inset:0; background:rgba(10,16,14,.45); display:flex; align-items:flex-end; justify-content:center; z-index:5 }
+  .sheet { background:var(--surface); width:100%; max-width:440px; border-radius:18px 18px 0 0; padding:18px 16px 22px; display:flex; flex-direction:column; gap:10px; max-height:92vh; overflow-y:auto }
+  .sheet h2 { margin:0; font-size:17px }
+  fieldset { border:1px solid var(--line); border-radius:10px; padding:6px 12px 10px; margin:0; display:flex; flex-direction:column; gap:4px }
+  legend { font-size:12px; font-weight:700; padding:0 4px }
+  .opt { display:flex; gap:8px; align-items:center; font-size:13px; padding:6px 0; border-bottom:1px solid var(--line) }
+  .opt:last-of-type { border-bottom:0 } .opt input { width:16px; height:16px; accent-color:var(--accent) }
+  .fee { margin-left:auto; font-size:11.5px; color:var(--muted); white-space:nowrap } .stars { font-size:11px; letter-spacing:-1px }
+  ul.rules { margin:0; padding-left:18px; font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:3px }
+  .agree { display:flex; gap:8px; align-items:center; font-size:13px; font-weight:700; border:1px solid var(--line); border-radius:8px; padding:8px 10px }
+  .agree input { width:18px; height:18px; accent-color:var(--accent) }
+  .line { background:var(--chat); min-height:100%; padding:14px 12px; display:flex; flex-direction:column; gap:10px }
+  .bubble { background:#fff; border-radius:16px 16px 16px 4px; padding:10px 12px; font-size:13px; white-space:pre-line; max-width:88% }
+  .bubble time { display:block; font-size:10px; color:var(--muted); margin-top:4px }
+  footer { padding:12px 14px 20px; border-top:1px solid var(--line); display:flex; flex-direction:column; gap:6px }
+  .toast { position:fixed; left:50%; transform:translateX(-50%); bottom:24px; background:var(--ink); color:#fff; padding:10px 16px; border-radius:10px; font-size:13px; z-index:9; max-width:calc(100% - 32px) }
+</style>
+</head>
+<body>
+<div class="app">
+  <header><b>キャンセル待ち</b><small>SPACE GYM 麻布十番店</small></header>
+  <nav id="tabs" hidden style="grid-template-columns:repeat(2,1fr)">
+    <button data-tab="find" aria-selected="true">枠をさがす</button>
+    <button data-tab="mine" aria-selected="false">登録中</button>
+  </nav>
+  <main id="main"><div class="loading" role="status"><span class="spin" aria-hidden="true"></span>読み込み中…</div></main>
+  <footer>
+    <span class="small muted">ご不明な点は、公式LINEのトークでお問い合わせください。</span>
+  </footer>
+</div>
+<div id="sheet"></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+// 公開して問題ない設定だけを書く(トークン・シークレットは書かない。サーバー側のスクリプトプロパティにだけある)
+const CONFIG = {
+  liffId: '2012604333-4rupAgWD',
+  api: 'https://script.google.com/macros/s/AKfycbxT5uhYby-Mu6kYbcmdPXt7szFUQza7wHvH4s_xx4Txr74XFzNmvMuu8dQYdN5Du-gc/exec',
+};
+const STORE = 'AZB';
+const S = { tab:'find', date:null, week:0, day:null, trainers:[] };
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// サーバー(GAS)へは LINE の ID トークンだけを送る。ユーザーIDは送らない(サーバーが LINE に問い合わせて確かめる)
+async function api(body) {
+  const idToken = liff.getIDToken();
+  if (!idToken) throw new Error('LINEの本人確認ができませんでした。画面を開き直してください');
+  const res = await fetch(CONFIG.api, {
+    method: 'POST', redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // text/plain にして、ブラウザの事前確認(CORS)を起こさない
+    body: JSON.stringify(Object.assign({ storeId: STORE, idToken }, body)),
+  });
+  if (!res.ok) throw new Error('通信に失敗しました(' + res.status + ')');
+  return res.json();
+}
+const WD = ['日','月','火','水','木','金','土'];
+const MENU = { personal:'パーソナルトレーニング', pair:'ペアパーソナルトレーニング' };
+const menuLabel = (m, staff) => `${MENU[m] || MENU.personal}${staff ? '(指名有り)' : ''} 55分`;
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const jaDay = s => { const [y,m,d] = s.split('-').map(Number); return `${m}月${d}日(${WD[new Date(y,m-1,d).getDay()]})`; };
+const yen = n => Number(n).toLocaleString('ja-JP') + '円';
+const tname = id => { const t = S.trainers.find(x => x.staffId === id); return t ? t.name + 'トレーナー' : ''; };
+let tt; const toast = t => { const el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(tt); tt = setTimeout(() => el.hidden = true, 3500); };
+const spinner = (t = '読み込み中…') => `<div class="loading" role="status"><span class="spin" aria-hidden="true"></span>${t}</div>`;
+const loading = t => { $('main').innerHTML = spinner(t); };
+// 一度読んだ日は30秒だけ覚えておき、日付を行き来したときにすぐ表示する
+const dayCache = {}, inflight = {};
+function getDay(date, useCache) {
+  const c = dayCache[date];
+  if (useCache && c && Date.now() - c.at < 30000) return Promise.resolve(c.d);
+  if (useCache && inflight[date]) return inflight[date];   // 先読み中ならそれを待つ
+  const p = api({ action:'day', date }).then(d => { if (d.ok) dayCache[date] = { d, at: Date.now() }; return d; })
+    .finally(() => { delete inflight[date]; });
+  inflight[date] = p;
+  return p;
+}
+// 表示が終わったら、次の2日分を裏で先に読んでおく(日付を押したときにすぐ出せるように)
+function prefetch() {
+  const i = days.indexOf(S.date);
+  days.slice(i + 1, i + 3).forEach(d => { getDay(d, true).catch(() => {}); });
+}
+const fail = e => { $('main').innerHTML = `<div class="pad"><div class="msg err">読み込めませんでした:${esc(e && e.message || e)}</div></div>`; };
+
+// 今日から、受付が開いている最後の月の末日まで(毎月20日0時に翌月分が開く)
+const days = (() => {
+  const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+  const end = new Date(y, m + (now.getDate() >= 20 ? 2 : 1), 0);   // 開いている最後の月の末日
+  const out = []; for (const d = new Date(y, m, now.getDate()); d <= end; d.setDate(d.getDate() + 1)) out.push(ymd(d));
+  return out;
+})();
+const LAST_WEEK = Math.ceil(days.length / 7) - 1;
+S.date = days[0];
+
+async function start() {
+  loading('空き状況を確認しています…');
+  try {
+    // 最初から枠を読みにいく(会員確認がまだなら、そう返ってくる)。1往復で済むので速い
+    const d = await getDay(S.date, false);
+    if (d.needLink) return showLink();
+    $('tabs').hidden = false;
+    renderFind(d);
+  } catch (e) { fail(e); }
+}
+
+function showLink(msg) {
+  $('tabs').hidden = true;
+  $('main').innerHTML = `<form class="pad" id="link">
+    <b style="font-size:16px">会員情報の確認(初回のみ)</b>
+    <span class="small muted">予約システムに登録しているメールアドレスと電話番号を入力してください。2回目からは不要です。</span>
+    <label class="field">メールアドレス<input id="em" type="email" autocomplete="email" required></label>
+    <label class="field">電話番号<input id="tel" type="tel" autocomplete="tel" required></label>
+    ${msg ? `<div class="msg err">${esc(msg)}</div>` : ''}
+    <button class="btn primary block" type="submit">確認して進む</button>
+    <span class="small muted">入力したメールアドレスと電話番号は、会員の確認だけに使い、保存しません。</span>
+  </form>`;
+  $('link').onsubmit = async e => {
+    e.preventDefault();
+    const b = e.target.querySelector('button'); b.disabled = true; b.textContent = '確認中…';
+    try {
+      const r = await api({ action:'link', email: $('em').value, tel: $('tel').value });
+      if (!r.ok) return showLink(r.message);
+      toast('会員情報を確認しました'); $('tabs').hidden = false; render();
+    } catch (err) { showLink('確認できませんでした。時間をおいてお試しください'); }
+  };
+}
+
+function setTab(t) {
+  S.tab = t;
+  $('tabs').querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t));
+  render();
+}
+$('tabs').querySelectorAll('button').forEach(b => b.onclick = () => setTab(b.dataset.tab));
+
+async function render(useCache) {
+  loading(S.tab === 'find' ? '空き状況を確認しています…' : '読み込み中…');
+  try {
+    if (S.tab === 'find') return renderFind(await getDay(S.date, useCache));
+    return renderMine(await api({ action:'mine' }));
+  } catch (e) { fail(e); }
+}
+
+function renderFind(d) {
+  if (!d.ok) return fail(d.message);
+  S.day = d; S.trainers = d.trainers || [];
+  setTimeout(prefetch, 0);
+  const wk = days.slice(S.week * 7, S.week * 7 + 7);
+  const strip = wk.map(x => { const [y,m,dd] = x.split('-').map(Number); return `<button class="day" data-d="${x}" aria-pressed="${x===S.date}"><span>${WD[new Date(y,m-1,dd).getDay()]}</span><b>${m}/${dd}</b></button>`; }).join('');
+  const rows = d.slots.map(s => {
+    let badge, note, act = '';
+    if (s.state === 'waiting') { badge = '<span class="badge b-wait">キャンセル待ち中</span>'; note = `あなたは${s.myPosition}番目(${s.waitCount}名待ち)・${esc(menuLabel(s.myMenu, s.myStaffId))}`; act = `<button class="btn" data-go="mine">確認</button>`; }
+    else if (s.state === 'open') {
+      badge = '<span class="badge b-open">空きあり</span>'; note = `残り${s.free}枠 ・ 予約サイトから予約できます` + (s.pairOpen ? '' : '<br>ペアは満席です(ペアはキャンセル待ちできます)');
+      act = d.reserveUrl ? `<a class="btn" href="${esc(d.reserveUrl)}" target="_blank" rel="noopener">予約サイトへ</a>` : `<button class="btn" data-nourl>予約サイトへ</button>`;
+      if (!s.pairOpen && s.waitable) act = `<div class="row" style="flex-direction:column;align-items:flex-end">${act}<button class="btn" data-reg="${s.slot}">ペアで待つ</button></div>`;
+    }
+    else if (s.state === 'nostaff') { badge = '<span class="badge b-closed">受付なし</span>'; note = 'この時間は予約を受け付けていません'; }
+    else if (s.state === 'closed') { badge = '<span class="badge b-closed">受付終了</span>'; note = '開始24時間前を過ぎたため、キャンセル待ちできません'; }
+    else { badge = '<span class="badge b-full">満席</span>'; note = s.waitCount ? `現在 ${s.waitCount}名待ち` : 'キャンセル待ちはまだいません'; act = `<button class="btn primary" data-reg="${s.slot}">キャンセル待ちする</button>`; }
+    return `<div class="slot"><span class="time">${s.time}</span><div>${badge}<span class="note">${note}</span></div>${act}</div>`;
+  }).join('');
+  $('main').innerHTML = `<div class="weeknav"><button id="prev" ${S.week===0?'disabled':''}>‹ 前の週</button><button id="next" ${S.week>=LAST_WEEK?'disabled':''}>次の週 ›</button></div>
+    <div class="days">${strip}</div>
+    <div class="small muted" style="padding:8px 12px">${jaDay(S.date)}</div>
+    <div id="slots">${d.notOpen ? `<div class="empty">${esc(d.monthLabel)}のご予約(キャンセル待ちを含む)は、<b>${esc(d.openLabel)}</b>から受け付けます</div>` : (rows || '<div class="empty">この日の予約枠は終了しました</div>')}</div>`;
+  $('main').querySelectorAll('.day').forEach(b => b.onclick = () => pickDay(b.dataset.d));
+  $('prev').onclick = () => { S.week = Math.max(0, S.week - 1); S.date = days[S.week * 7]; render(true); };
+  $('next').onclick = () => { S.week = Math.min(LAST_WEEK, S.week + 1); S.date = days[S.week * 7]; render(true); };
+  $('main').querySelectorAll('[data-reg]').forEach(b => b.onclick = () => openRegister(d.slots.find(s => s.slot === b.dataset.reg)));
+  $('main').querySelectorAll('[data-go]').forEach(b => b.onclick = () => setTab('mine'));
+  $('main').querySelectorAll('[data-nourl]').forEach(b => b.onclick = () => toast('予約サイトは、公式LINEのメニューから開いてください'));
+}
+
+// 日付を押したら、日付の並びはそのままで、下の枠の部分だけクルクルを出す
+async function pickDay(date) {
+  S.date = date;
+  $('main').querySelectorAll('.day').forEach(b => b.setAttribute('aria-pressed', b.dataset.d === date));
+  const box = $('slots');
+  if (box) box.innerHTML = spinner('空き状況を確認しています…');
+  try { renderFind(await getDay(date, true)); } catch (e) { fail(e); }
+}
+
+function openRegister(s, msg) {
+  // 空きがある時間は、ペア用の設備が埋まっているときの「ペア」だけ待てる
+  const onlyNom = s.state === 'open';
+  const allowed = v => !onlyNom || v.startsWith('pair');
+  const sel = S.sel && allowed(S.sel) ? S.sel : (onlyNom ? 'pair' : 'personal');
+  S.sel = sel;
+  const nom = sel.endsWith('_nom');
+  const opts = [['personal','パーソナルトレーニング'],['personal_nom','パーソナルトレーニング(指名有り)'],['pair','ペアパーソナルトレーニング'],['pair_nom','ペアパーソナルトレーニング(指名有り)']]
+    .filter(([v]) => allowed(v))
+    .map(([v,l]) => `<label class="opt"><input type="radio" name="menu" value="${v}" ${sel===v?'checked':''}>${l}<span class="fee">55分</span></label>`).join('');
+  const trainers = nom ? `<fieldset><legend>トレーナーを選択してください</legend>${
+      s.nominatable.length ? s.nominatable.map(id => { const t = S.trainers.find(x => x.staffId === id) || { name:id, rank:0, fee:0 };
+        return `<label class="opt"><input type="radio" name="tr" value="${esc(id)}" ${S.tr===id?'checked':''}>${esc(t.name)}<span class="stars">${'★'.repeat(t.rank||0)}</span><span class="fee">指名料 ${yen(t.fee)}</span></label>`; }).join('')
+      : '<span class="small muted">この時間に指名でキャンセル待ちできるトレーナーはいません</span>'
+    }<span class="small muted">※別途指名料を当日店頭でお支払いいただきます。当日キャンセルの場合も指名料がかかります。指名すると、そのトレーナーの枠が空いたときだけ予約されます。</span></fieldset>` : '';
+  $('sheet').innerHTML = `<div class="back" id="bg"><div class="sheet" role="dialog" aria-modal="true">
+    <h2>キャンセル待ちに登録しますか?</h2>
+    <div class="card"><b style="font-size:15px">${jaDay(s.slot.slice(0,10))} ${s.time}〜</b><span class="small muted">麻布十番店 ・ 現在 ${s.waitCount}名待ち → あなたは${s.waitCount + 1}番目</span></div>
+    <fieldset><legend>メニューを選択してください</legend>${opts}${sel.startsWith('pair') ? '<span class="small muted">ペアは2名で1枠を使います。登録はどちらか1名が行ってください。</span>' : ''}</fieldset>
+    ${trainers}
+    <ul class="rules"><li>使えるチケットがない場合は登録できません。チケットは店頭でご購入ください</li><li>開始24時間前までに順番が来ると、お持ちのチケットで自動で予約が入ります</li><li>予約が入ると、LINEとメールでお知らせします</li><li>自動で入った予約のキャンセルには、通常のご予約と同じキャンセル規定が適用されます</li><li>開始24時間前を過ぎると、このキャンセル待ちは終了します(お知らせはありません)</li></ul>
+    <label class="agree"><input type="checkbox" id="agree" ${S.agree?'checked':''}> 上記の内容を確認しました</label>
+    ${msg ? `<div class="msg err">${esc(msg)}</div>` : ''}
+    <button class="btn primary block" id="go">キャンセル待ちに登録する</button>
+    <button class="btn ghost block" id="close">やめる</button>
+  </div></div>`;
+  const ready = () => $('agree').checked && (!S.sel.endsWith('_nom') || !!S.tr);
+  $('go').disabled = !ready();
+  $('sheet').querySelectorAll('input[name=menu]').forEach(i => i.onchange = () => { S.sel = i.value; if (!S.sel.endsWith('_nom')) S.tr = null; S.agree = $('agree').checked; openRegister(s); });
+  $('sheet').querySelectorAll('input[name=tr]').forEach(i => i.onchange = () => { S.tr = i.value; $('go').disabled = !ready(); });
+  $('agree').onchange = () => { S.agree = $('agree').checked; $('go').disabled = !ready(); };
+  $('close').onclick = closeSheet;
+  $('bg').onclick = e => { if (e.target.id === 'bg') closeSheet(); };
+  $('go').onclick = async () => {
+    $('go').disabled = true; $('go').textContent = '登録中…';
+    try {
+      const nomSel = S.sel.endsWith('_nom');
+      const r = await api({ action:'register', slot: s.slot, menu: S.sel.startsWith('pair') ? 'pair' : 'personal', staffId: nomSel ? S.tr : '' });
+      if (!r.ok) return openRegister(s, r.message);
+      closeSheet();
+      $('sheet').innerHTML = `<div class="back"><div class="sheet" style="text-align:center;align-items:center">
+        <h2>キャンセル待ちに登録しました</h2><span class="muted">${jaDay(s.slot.slice(0,10))} ${s.time}〜</span>
+        <div class="pos">あなたは <b>${r.position}</b> 番目</div>
+        <span class="small muted">順番が来たら自動で予約され、LINEとメールでお知らせします。</span>
+        <button class="btn primary block" id="toMine">登録中のキャンセル待ちを見る</button><button class="btn ghost block" id="close2">閉じる</button></div></div>`;
+      $('toMine').onclick = () => { closeSheet(); setTab('mine'); };
+      $('close2').onclick = () => { closeSheet(); render(); };
+    } catch (e) { openRegister(s, '登録できませんでした。時間をおいてお試しください'); }
+  };
+}
+function closeSheet() { $('sheet').innerHTML = ''; S.sel = null; S.tr = null; S.agree = false; }
+
+function renderMine(d) {
+  if (!d.ok) return fail(d.message);
+  S.trainers = d.trainers || S.trainers;
+  const w = d.waiting.map(x => `<div class="card">
+      <b>${jaDay(x.slot.slice(0,10))} ${x.slot.slice(11)}〜</b>
+      <span class="tag">${esc(x.menuLabel)}${x.staffId ? '・' + esc(tname(x.staffId)) : ''}</span>
+      <div class="pos"><b>${x.position}</b> 番目 ・ ${x.waitCount}名待ち</div>
+      <div class="row"><button class="btn" data-wd="${x.id}">取り消す</button></div>
+      <div data-confirm="${x.id}" hidden class="msg err">このキャンセル待ちを取り消しますか? <button class="btn danger" data-yes="${x.id}">取り消す</button> <button class="btn ghost" data-no="${x.id}">やめる</button></div>
+    </div>`).join('');
+  const b = d.booked.map(x => `<div class="card"><b>${jaDay(x.slot.slice(0,10))} ${x.slot.slice(11)}〜</b><span class="tag">${esc(x.menuLabel)}${x.staffId ? '・' + esc(tname(x.staffId)) : ''}</span><span class="badge b-booked" style="width:fit-content">キャンセル待ちから予約が確定</span></div>`).join('');
+  $('main').innerHTML = `<div class="pad"><b class="small muted">登録中のキャンセル待ち</b>${w || '<div class="empty">登録中のキャンセル待ちはありません</div>'}
+    ${b ? `<b class="small muted">キャンセル待ちから予約できた枠</b>${b}` : ''}</div>`;
+  $('main').querySelectorAll('[data-wd]').forEach(x => x.onclick = () => { $('main').querySelector(`[data-confirm="${x.dataset.wd}"]`).hidden = false; });
+  $('main').querySelectorAll('[data-no]').forEach(x => x.onclick = () => { $('main').querySelector(`[data-confirm="${x.dataset.no}"]`).hidden = true; });
+  $('main').querySelectorAll('[data-yes]').forEach(x => x.onclick = async () => {
+    x.disabled = true;
+    const r = await api({ action:'withdraw', id: x.dataset.yes });
+    toast(r.ok ? 'キャンセル待ちを取り消しました' : r.message); render();
+  });
+}
+
+// LINE の中で開く(LIFF)。ログインしていなければ LINE ログインへ
+(async () => {
+  try {
+    await liff.init({ liffId: CONFIG.liffId });
+    if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
+    start();
+  } catch (e) { fail('LINEの画面を開けませんでした。LINEアプリから開き直してください'); }
+})();
+</script>
+</body>
+</html>
