@@ -11,6 +11,7 @@
           --accent:#0b6e63; --accent-soft:#e1f0ed; --navy:#12163f; --good:#1f7a3d; --good-soft:#e2f2e7;
           --crit:#b3261e; --crit-soft:#fbe5e3; --warn:#a85c12; --warn-soft:#fbeedd; --chat:#8ca6d6; }
   * { box-sizing:border-box }
+  [hidden] { display:none !important }   /* 隠す指定を、ほかの表示指定より優先する */
   body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.6 "Hiragino Sans","Noto Sans JP",system-ui,sans-serif; }
   .app { max-width:440px; margin:0 auto; min-height:100vh; background:var(--surface); display:flex; flex-direction:column }
   .test { background:var(--warn-soft); color:var(--warn); font-size:11.5px; padding:6px 14px; font-weight:700 }
