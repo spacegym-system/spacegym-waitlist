@@ -43,6 +43,7 @@
   .ghost { border-color:transparent; background:none; color:var(--muted) }
   .demo { border:1px dashed #6b4fbf; color:#6b4fbf; background:none; font-weight:500 }
   .danger { border-color:var(--crit); color:var(--crit) }
+  .card.done { opacity:.6 }
   .danger-fill { background:var(--crit); border-color:var(--crit); color:#fff }
   .pad { padding:16px; display:flex; flex-direction:column; gap:12px }
   .card { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:6px }
@@ -302,9 +303,13 @@ function renderMine(d) {
       <div class="row"><button class="btn danger" data-wd="${x.id}">取り消す</button></div>
       <div data-confirm="${x.id}" hidden class="msg err">このキャンセル待ちを取り消しますか?<div class="row" style="margin-top:8px"><button class="btn danger-fill" data-yes="${x.id}">取り消す</button><button class="btn" data-no="${x.id}">やめる</button></div></div>
     </div>`).join('');
-  const b = d.booked.map(x => `<div class="card"><b>${jaDay(x.slot.slice(0,10))} ${x.slot.slice(11)}〜</b><span class="tag">${esc(x.menuLabel)}${x.staffId ? '・' + esc(tname(x.staffId)) : ''}</span><span class="badge b-booked" style="width:fit-content">キャンセル待ちから予約が確定</span></div>`).join('');
+  // キャンセル待ちから予約できた枠(新しい日時が上)。これからの分と、終わった分で分ける
+  const card = x => `<div class="card${x.past ? ' done' : ''}"><b>${jaDay(x.slot.slice(0,10))} ${x.slot.slice(11)}〜</b><span class="tag">${esc(x.menuLabel)}${x.staffId ? '・' + esc(tname(x.staffId)) : ''}</span><span class="badge ${x.past ? 'b-closed' : 'b-booked'}" style="width:fit-content">キャンセル待ちで確定</span></div>`;
+  const up = d.booked.filter(x => !x.past).map(card).join('');
+  const past = d.booked.filter(x => x.past).map(card).join('');
   $('main').innerHTML = `<div class="pad"><b class="small muted">登録中のキャンセル待ち</b>${w || '<div class="empty">登録中のキャンセル待ちはありません</div>'}
-    ${b ? `<b class="small muted">キャンセル待ちから予約できた枠</b>${b}` : ''}</div>`;
+    ${up ? `<b class="small muted">予約確定</b>${up}` : ''}
+    ${past ? `<b class="small muted">受講済み</b>${past}` : ''}</div>`;
   $('main').querySelectorAll('[data-wd]').forEach(x => x.onclick = () => { $('main').querySelector(`[data-confirm="${x.dataset.wd}"]`).hidden = false; });
   $('main').querySelectorAll('[data-no]').forEach(x => x.onclick = () => { $('main').querySelector(`[data-confirm="${x.dataset.no}"]`).hidden = true; });
   $('main').querySelectorAll('[data-yes]').forEach(x => x.onclick = async () => {
