@@ -210,6 +210,11 @@ function renderFind(d) {
   const rows = d.slots.map(s => {
     let badge, note, act = '';
     if (s.state === 'waiting') { badge = '<span class="badge b-wait">キャンセル待ち中</span>'; note = `あなたは${s.myPosition}番目(${s.waitCount}名待ち)・${esc(menuLabel(s.myMenu, s.myStaffId))}`; act = `<button class="btn" data-go="mine">確認</button>`; }
+    else if (s.state === 'open' && within24h(s.slot)) {
+      // 開始24時間前を過ぎた空き枠は、予約サイトからは予約できないので、LINE のトークでの問い合わせに案内する
+      badge = '<span class="badge b-open">空きあり</span>'; note = `残り${s.free}枠 ・ 開始24時間前を過ぎたため、ご予約はLINEのトークでお問い合わせください`;
+      act = `<button class="btn" data-talk>トークで問い合わせ</button>`;
+    }
     else if (s.state === 'open') {
       badge = '<span class="badge b-open">空きあり</span>'; note = `残り${s.free}枠 ・ 予約サイトから予約できます` + (s.pairOpen ? '' : '<br>ペアは満席です(ペアはキャンセル待ちできます)');
       act = d.reserveUrl ? `<a class="btn" href="${esc(d.reserveUrl)}" target="_blank" rel="noopener">予約サイトへ</a>` : `<button class="btn" data-nourl>予約サイトへ</button>`;
@@ -230,6 +235,18 @@ function renderFind(d) {
   $('main').querySelectorAll('[data-reg]').forEach(b => b.onclick = () => openRegister(d.slots.find(s => s.slot === b.dataset.reg)));
   $('main').querySelectorAll('[data-go]').forEach(b => b.onclick = () => setTab('mine'));
   $('main').querySelectorAll('[data-nourl]').forEach(b => b.onclick = () => toast('予約サイトは、公式LINEのメニューから開いてください'));
+  $('main').querySelectorAll('[data-talk]').forEach(b => b.onclick = backToTalk);
+}
+
+/** 枠の開始まで24時間を切っているか(枠の日時は日本時間) */
+function within24h(slot) {
+  const t = new Date(String(slot).replace(' ', 'T') + ':00+09:00').getTime();
+  return t - Date.now() < 24 * 3600 * 1000;
+}
+/** この画面を閉じて、公式LINEのトーク画面に戻る(LINE の外で開いているときは案内だけ出す) */
+function backToTalk() {
+  try { if (liff.isInClient()) { liff.closeWindow(); return; } } catch (e) {}
+  toast('公式LINEのトーク画面から、ご希望の日時をお送りください');
 }
 
 // 日付を押したら、日付の並びはそのままで、下の枠の部分だけクルクルを出す
