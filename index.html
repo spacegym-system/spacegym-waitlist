@@ -278,7 +278,7 @@ function openRegister(s, msg) {
     <div class="card"><b style="font-size:15px">${jaDay(s.slot.slice(0,10))} ${s.time}〜</b><span class="small muted">麻布十番店 ・ 現在 ${s.waitCount}名待ち → あなたは${s.waitCount + 1}番目</span></div>
     <fieldset><legend>メニューを選択してください</legend>${opts}${sel.startsWith('pair') ? '<span class="small muted">ペアは2名で1枠を使います。登録はどちらか1名が行ってください。</span>' : ''}</fieldset>
     ${trainers}
-    <ul class="rules"><li>使えるチケットがない場合は登録できません。チケットは店頭でご購入ください</li><li>開始24時間前までに順番が来ると、お持ちのチケットで自動で予約が入ります</li><li>予約が入ると、LINEとメールでお知らせします</li><li>自動で入った予約のキャンセルには、通常のご予約と同じキャンセル規定が適用されます</li><li>開始24時間前を過ぎると、このキャンセル待ちは終了します(お知らせはありません)</li></ul>
+    <ul class="rules"><li>この時間・メニューで使える月額プランまたはチケットがない場合は登録できません。詳しくは店頭でご確認ください</li><li>開始24時間前までに順番が来ると、ご契約のプラン・チケットで自動で予約が入ります</li><li>予約が入ると、LINEとメールでお知らせします</li><li>自動で入った予約のキャンセルには、通常のご予約と同じキャンセル規定が適用されます</li><li>開始24時間前を過ぎると、このキャンセル待ちは終了します(お知らせはありません)</li></ul>
     <label class="agree"><input type="checkbox" id="agree" ${S.agree?'checked':''}> 上記の内容を確認しました</label>
     ${msg ? `<div class="msg err">${esc(msg)}</div>` : ''}
     <button class="btn primary block" id="go">キャンセル待ちに登録する</button>
