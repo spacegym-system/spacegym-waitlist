@@ -164,7 +164,7 @@ async function start() {
   } catch (e) { fail(e); }
 }
 
-function showLink(msg) {
+function showLink(msg, hint) {
   $('tabs').hidden = true;
   $('main').innerHTML = `<form class="pad" id="link">
     <b style="font-size:16px">会員情報の確認(初回のみ)</b>
@@ -172,6 +172,7 @@ function showLink(msg) {
     <label class="field">メールアドレス<input id="em" type="email" autocomplete="email" required></label>
     <label class="field">電話番号<input id="tel" type="tel" autocomplete="tel" required></label>
     ${msg ? `<div class="msg err">${esc(msg)}</div>` : ''}
+    ${hint ? `<div class="msg" style="background:var(--accent-soft);color:var(--ink);line-height:1.6">電話番号をマイページに登録していない場合は、確認できません。マイページで電話番号を登録してから、もう一度お試しください。<a class="btn block" style="margin-top:8px;display:block;text-align:center;text-decoration:none" href="https://space-gym.hacomono.jp/mypage/" target="_blank" rel="noopener">マイページを開く</a></div>` : ''}
     <button class="btn primary block" type="submit">確認して進む</button>
     <span class="small muted">入力したメールアドレスと電話番号は、会員の確認だけに使い、保存しません。</span>
   </form>`;
@@ -180,7 +181,7 @@ function showLink(msg) {
     const b = e.target.querySelector('button'); b.disabled = true; b.textContent = '確認中…';
     try {
       const r = await api({ action:'link', email: $('em').value, tel: $('tel').value });
-      if (!r.ok) return showLink(r.message);
+      if (!r.ok) return showLink(r.message, /見つかりませんでした/.test(r.message || ''));
       toast('会員情報を確認しました'); $('tabs').hidden = false; render();
     } catch (err) { showLink('確認できませんでした。時間をおいてお試しください'); }
   };
